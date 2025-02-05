@@ -8,13 +8,17 @@ use Firebase\JWT\JWT;
 
 $secret_key = $_ENV['SECRET_KEY'];
 
+
 $data = get_json_input();
 $username = $data['username'] ?? '';
 $password = $data['password'] ?? '';
+$recaptchaToken = $data['recaptchaToken'] ?? '';
 
 if (empty($username) || empty($password)) {
     send_json_response(400, "Username and password are required");
 }
+
+validateRecaptcha($recaptchaToken);
 
 $user = get_user_by_username($conn, $username);
 
@@ -26,7 +30,7 @@ if ($user && password_verify($password, $user['password'])) {
     $payload = [
         "id" => $user['id'],
         "username" => $username,
-        "exp" => time() + 3600, // Token expires in 1 hour
+        "exp" => time() + 3600,
         "is_admin" => $user['is_admin'],
         "is_active" => $user['is_active'],
     ];

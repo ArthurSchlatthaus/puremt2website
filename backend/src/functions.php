@@ -121,3 +121,23 @@ function logActivity($message)
 
     $stmt->close();
 }
+
+
+function validateRecaptcha($recaptchaToken)
+{
+    $recaptcha_secret = $_ENV['RECAPTCHA_SECRET_KEY'];
+
+    if (empty($recaptchaToken)) {
+        send_json_response(400, "reCAPTCHA token is required");
+        exit;
+    }
+
+    $recaptcha_url = "https://www.google.com/recaptcha/api/siteverify";
+    $response = file_get_contents("$recaptcha_url?secret=$recaptcha_secret&response=$recaptchaToken");
+    $responseKeys = json_decode($response, true);
+
+    if (!$responseKeys || !$responseKeys["success"]) {
+        send_json_response(403, "reCAPTCHA verification failed");
+        exit;
+    }
+}

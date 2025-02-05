@@ -7,9 +7,11 @@ require 'config.php';
 use Firebase\JWT\JWT;
 
 $secret_key = $_ENV['SECRET_KEY'];
+$recaptcha_secret = $_ENV['RECAPTCHA_SECRET_KEY'];
 $data = get_json_input();
 $username = $data['username'] ?? '';
 $password = $data['password'] ?? '';
+$recaptchaToken = $data['recaptchaToken'] ?? '';
 
 if (empty($username) || empty($password)) {
     send_json_response(400, "Username and password are required");
@@ -18,6 +20,8 @@ if (empty($username) || empty($password)) {
 if (get_user_by_username($conn, $username)) {
     send_json_response(400, "Username is already taken");
 }
+
+validateRecaptcha($recaptchaToken);
 
 if (insert_user($conn, $username, $password)) {
     $payload = [

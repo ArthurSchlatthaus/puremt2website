@@ -18,7 +18,7 @@ function NewThread() {
             setMessage({type: "success", text: response.data.message});
             setTimeout(() => navigate("/forum"), 2000);
         } catch (error) {
-            setMessage({type: "error", text: error.response?.data?.error || "Failed to create thread"});
+            setMessage({type: "danger", text: error.response?.data?.error || "Failed to create thread"});
         }
     };
 

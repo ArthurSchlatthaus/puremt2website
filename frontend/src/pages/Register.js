@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {useNavigate} from "react-router-dom";
 import apiClient from "./../axios-config";
+import ReCAPTCHA from "react-google-recaptcha";
 
 function Register() {
     const [username, setUsername] = useState("");
@@ -12,6 +13,7 @@ function Register() {
     const [serverMessage, setServerMessage] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
 
     const validateForm = () => {
         let errors = {};
@@ -29,6 +31,11 @@ function Register() {
             return;
         }
 
+        if (!recaptchaToken) {
+            setServerMessage({type: "error", text: "Please verify the reCAPTCHA"});
+            return;
+        }
+
         setErrors({});
         setServerMessage(null);
         setLoading(true);
@@ -37,6 +44,7 @@ function Register() {
             const response = await apiClient.post("/register.php", {
                 username,
                 password,
+                recaptchaToken
             });
 
             setServerMessage({type: "success", text: "Registration successful! Logging in..."});
@@ -91,6 +99,13 @@ function Register() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                 />
                 {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            </div>
+
+            <div className="mb-3">
+                <ReCAPTCHA
+                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                    onChange={setRecaptchaToken}
+                />
             </div>
 
             <button type="submit" className="btn btn-success" disabled={loading}>

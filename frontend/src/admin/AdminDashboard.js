@@ -101,8 +101,7 @@ function AdminDashboard() {
     const toggleAdmin = async (userId, is_admin, is_active) => {
         try {
             await apiClient.put(`/admin/toggle_admin.php`, {
-                user_id: userId, is_admin: is_admin ? 0 : 1, // Toggle admin
-                is_active: is_active ? 0 : 1 // Toggle active status
+                user_id: userId, is_admin: is_admin ? 0 : 1, is_active: is_active ? 0 : 1
             }, {
                 headers: {Authorization: `Bearer ${localStorage.getItem("token")}`},
             });

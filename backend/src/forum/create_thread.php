@@ -8,8 +8,10 @@ authenticate_user($decoded);
 $userId = $decoded['id'];
 
 $lastPostTime = get_user_last_post_time($userId);
-if (time() - $lastPostTime < 60) {
-    send_json_response(429, "Please wait before create the thread");
+$waitTime = 60 - (time() - $lastPostTime);
+
+if ($waitTime > 0) {
+    send_json_response(429, "Please wait {$waitTime} seconds before create thread again");
 }
 
 $data = get_json_input();

@@ -46,8 +46,10 @@ function Thread() {
             if (error.response?.status === 401) {
                 localStorage.removeItem("token");
                 window.location.href = "/";
+            } else if (error.response?.status === 429) {
+                setMessage({type: "danger", text: error.response.data.error || "Too many requests, please wait."});
             } else {
-                setMessage({type: "error", text: "Failed to post reply"});
+                setMessage({type: "danger", text: "Failed to post reply, you have to wait"});
             }
         }
     };
@@ -60,7 +62,6 @@ function Thread() {
 
     return (<div className="container mt-4">
         <h2 className="mb-4">Thread Discussion</h2>
-        {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
 
         <div className="list-group mb-4">
             {posts.length === 0 ? (<p className="text-muted">No replies yet.</p>) : (posts.map((post, index) => (
@@ -74,6 +75,7 @@ function Thread() {
                 </div>)))}
         </div>
 
+        {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
         <form onSubmit={handleSubmit}>
             <Editor value={content} onChange={setContent} clearContent={clearEditor}/>
             <button type="submit" className="btn btn-primary mt-3">Reply</button>
