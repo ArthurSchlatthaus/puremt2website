@@ -97,23 +97,6 @@ function AdminDashboard() {
         }
     };
 
-
-    const toggleAdmin = async (userId, is_admin, is_active) => {
-        try {
-            await apiClient.put(`/admin/toggle_admin.php`, {
-                user_id: userId, is_admin: is_admin ? 0 : 1, is_active: is_active ? 0 : 1
-            }, {
-                headers: {Authorization: `Bearer ${localStorage.getItem("token")}`},
-            });
-
-            setUsers((prevUsers) => prevUsers.map((u) => u.id === userId ? {
-                ...u, is_admin: !u.is_admin, is_active: !u.is_active
-            } : u));
-        } catch (error) {
-            console.error("Error toggling admin status:", error.response?.data?.error || "Unauthorized");
-        }
-    };
-
     return (<div className="container text-center">
         <h1>Admin Dashboard</h1>
         <button className="btn btn-danger mb-3" onClick={handleLogout}>
@@ -144,12 +127,6 @@ function AdminDashboard() {
                 <td>{user.is_active ? "Yes" : "No"}</td>
                 <td>{user.is_admin ? "Yes" : "No"}</td>
                 <td>
-                    <button
-                        className="btn btn-sm btn-primary me-2"
-                        onClick={() => toggleAdmin(user.id, user.is_admin)}
-                    >
-                        {user.is_admin ? "Demote" : "Promote"}
-                    </button>
                     <button
                         className={`btn btn-sm ${user.is_active ? "btn-danger" : "btn-success"}`}
                         onClick={() => (user.is_active ? disableUser(user.id) : enableUser(user.id))}

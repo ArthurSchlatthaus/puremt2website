@@ -1,36 +1,20 @@
 <?php
-function applyRateLimit()
+function applyRateLimit(): void
 {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        return;
-    }
+    $redis = new Redis();
+    $redis->connect(getenv('REDIS_HOST') ?: 'redis', getenv('REDIS_PORT') ?: 6379);
 
     $ip = $_SERVER['REMOTE_ADDR'];
     $cacheKey = "rate_limit_$ip";
-    $requestCount = (int)(get_cache($cacheKey) ?? 0);
+    $requestCount = (int)($redis->get($cacheKey) ?? 0);
 
     if ($requestCount > 100) {
         http_response_code(429);
         exit(json_encode(["error" => "Too many requests"]));
     }
 
-    set_cache($cacheKey, $requestCount + 1, 60);
+    $redis->setex($cacheKey, 60, $requestCount + 1); // Set expiration of 60 seconds
 }
-
-function get_cache($key)
-{
-    $cacheFile = __DIR__ . '/cache/' . md5($key) . '.txt';
-    if (file_exists($cacheFile) && time() - filemtime($cacheFile) < 60) {
-        return trim(file_get_contents($cacheFile));
-    }
-    return null;
-}
-
-function set_cache($key, $value, $ttl = 60)
-{
-    $cacheFile = __DIR__ . '/cache/' . md5($key) . '.txt';
-    file_put_contents($cacheFile, $value);
-    @chmod($cacheFile, 0644);
-}
-
 applyRateLimit();
+
+// for i in {1..100}; do curl -X POST http://localhost:8080/test/rate_limit_test.php; echo ""; done

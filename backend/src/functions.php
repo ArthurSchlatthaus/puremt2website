@@ -1,6 +1,16 @@
 <?php
 require 'db.php';
 
+function getRedis()
+{
+    static $redis = null;
+    if (!$redis) {
+        $redis = new Redis();
+        $redis->connect(getenv('REDIS_HOST') ?: 'redis', 6379);
+    }
+    return $redis;
+}
+
 function get_json_input()
 {
     return json_decode(file_get_contents("php://input"), true) ?? [];
@@ -28,10 +38,23 @@ function authenticate_user($decoded, $user_id = null)
 
 function get_user_by_username($conn, $username)
 {
+    $redis = getRedis();
+    $cacheKey = "user:$username";
+
+    if ($redis->exists($cacheKey)) {
+        return json_decode($redis->get($cacheKey), true);
+    }
+
     $stmt = $conn->prepare("SELECT id, password, is_admin, is_active FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
-    return $stmt->get_result()->fetch_assoc();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if ($user) {
+        $redis->setex($cacheKey, 300, json_encode($user)); // Cache for 5 mins
+    }
+
+    return $user;
 }
 
 function insert_user($conn, $username, $password)
@@ -39,15 +62,22 @@ function insert_user($conn, $username, $password)
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
     $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
     $stmt->bind_param("ss", $username, $hashedPassword);
-    return $stmt->execute();
+
+    $result = $stmt->execute();
+    if ($result) {
+        $redis = getRedis();
+        $cacheKey = "user:$username";
+        $redis->del($cacheKey); // Remove cache after inserting new user
+    }
+    return $result;
 }
 
 function fetch_threads($conn, $user_id = null)
 {
-    $query = "SELECT t.id, t.title, t.created_at, u.username 
-          FROM forum_threads t
-          JOIN users u ON t.user_id = u.id 
-          WHERE u.is_active = 1";
+    $query = "SELECT t.id, t.title, t.created_at, u.username
+FROM forum_threads t
+JOIN users u ON t.user_id = u.id
+WHERE u.is_active = 1";
 
     if ($user_id) {
         $query .= " AND t.user_id = ?";
@@ -65,16 +95,15 @@ function fetch_threads($conn, $user_id = null)
 
 function fetch_posts_for_thread($conn, $thread_id)
 {
-    $stmt = $conn->prepare("SELECT p.id, p.content, p.created_at, u.username 
-                            FROM forum_posts p 
-                            JOIN users u ON p.user_id = u.id 
-                            WHERE p.thread_id = ? AND u.is_active = 1
-                            ORDER BY p.created_at");
+    $stmt = $conn->prepare("SELECT p.id, p.content, p.created_at, u.username
+FROM forum_posts p
+JOIN users u ON p.user_id = u.id
+WHERE p.thread_id = ? AND u.is_active = 1
+ORDER BY p.created_at");
     $stmt->bind_param("i", $thread_id);
     $stmt->execute();
     $posts = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    // Encode content to prevent XSS
     foreach ($posts as &$post) {
         $post['content'] = htmlspecialchars($post['content'], ENT_QUOTES, 'UTF-8');
     }
@@ -82,49 +111,57 @@ function fetch_posts_for_thread($conn, $thread_id)
     return $posts;
 }
 
-
-function get_user_last_post_time($userId)
+function get_user_last_post_time($userId): int
 {
+    $redis = getRedis();
+    $cacheKey = "last_post_time:$userId";
+
+    if ($redis->exists($cacheKey)) {
+        return (int)$redis->get($cacheKey);
+    }
+
     global $conn;
     $stmt = $conn->prepare("SELECT last_post_time FROM users WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
-    return $result ? (int)$result['last_post_time'] : 0;
+    $lastPostTime = $result ? (int)$result['last_post_time'] : 0;
+
+    $redis->setex($cacheKey, 60, $lastPostTime); // Cache for 60 seconds
+
+    return $lastPostTime;
 }
 
-function update_user_last_post_time($userId, $timestamp)
+function update_user_last_post_time($userId, $timestamp): void
 {
     global $conn;
     $stmt = $conn->prepare("UPDATE users SET last_post_time = ? WHERE id = ?");
     $stmt->bind_param("ii", $timestamp, $userId);
     $stmt->execute();
+
+    $redis = getRedis();
+    $cacheKey = "last_post_time:$userId";
+    $redis->setex($cacheKey, 60, $timestamp); // Update cache
 }
 
-function logActivity($message)
+function logActivity($message): void
 {
-    global $conn;
-    $stmt = $conn->prepare("INSERT INTO activity_logs (message) VALUES (?)");
+    $redis = getRedis();
+    $redis->lpush("activity_logs", json_encode([
+        "timestamp" => time(),
+        "message" => $message,
+    ]));
+}
 
-    if (!$stmt) {
-        error_log("Failed to prepare log statement: " . $conn->error);
+function validateRecaptcha($recaptchaToken): void
+{
+    $redis = getRedis();
+    $cacheKey = "recaptcha:$recaptchaToken";
+
+    if ($redis->exists($cacheKey)) {
         return;
     }
 
-    $stmt->bind_param("s", $message);
-
-    if ($stmt->execute()) {
-        error_log("Log entry added to database: $message");
-    } else {
-        error_log("Failed to insert log entry: " . $stmt->error);
-    }
-
-    $stmt->close();
-}
-
-
-function validateRecaptcha($recaptchaToken)
-{
     $recaptcha_secret = $_ENV['RECAPTCHA_SECRET_KEY'];
 
     if (empty($recaptchaToken)) {
@@ -140,4 +177,7 @@ function validateRecaptcha($recaptchaToken)
         send_json_response(403, "reCAPTCHA verification failed");
         exit;
     }
+
+// Cache reCAPTCHA validation result for 60 seconds
+    $redis->setex($cacheKey, 60, "valid");
 }

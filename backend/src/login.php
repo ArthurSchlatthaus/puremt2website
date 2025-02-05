@@ -8,7 +8,6 @@ use Firebase\JWT\JWT;
 
 $secret_key = $_ENV['SECRET_KEY'];
 
-
 $data = get_json_input();
 $username = $data['username'] ?? '';
 $password = $data['password'] ?? '';
