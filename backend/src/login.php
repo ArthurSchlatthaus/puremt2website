@@ -19,10 +19,16 @@ if (empty($username) || empty($password)) {
 $user = get_user_by_username($conn, $username);
 
 if ($user && password_verify($password, $user['password'])) {
+    if ((int)$user['is_active'] === 0) {
+        send_json_response(400, "User account is not active");
+    }
+
     $payload = [
         "id" => $user['id'],
         "username" => $username,
-        "exp" => time() + 3600 // Token expires in 1 hour
+        "exp" => time() + 3600, // Token expires in 1 hour
+        "is_admin" => $user['is_admin'],
+        "is_active" => $user['is_active'],
     ];
     echo json_encode(["success" => true, "token" => JWT::encode($payload, $secret_key, 'HS256')]);
 } else {

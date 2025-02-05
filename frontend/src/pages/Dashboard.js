@@ -19,7 +19,7 @@ function Dashboard() {
         }
 
         try {
-            const decoded = jwtDecode(token); // Decode token to get user data
+            const decoded = jwtDecode(token);
             setUser(decoded);
 
             apiClient.get("/forum/get_threads.php", {
@@ -38,6 +38,8 @@ function Dashboard() {
             console.error("Invalid token:", error);
             localStorage.removeItem("token");
             navigate("/");
+        } finally {
+            setLoading(false);
         }
     }, [navigate]);
 

@@ -14,17 +14,27 @@ function Forum() {
     }, []);
 
     return (<div className="container">
-            <h1>Forum</h1>
-            <Link to="/forum/new-thread" className="btn btn-primary">New Thread</Link>
-            <ul className="list-group mt-3">
-                {threads.map(thread => (<li key={thread.id} className="list-group-item">
-                        {typeof thread.id === "number" && thread.id > 0 ? (
-                            <Link to={`/forum/thread/${thread.id}`}>{thread.title}</Link>) : (
-                            <span>{thread.title} (Invalid ID)</span>)}
-                        <span className="text-muted"> by {thread.username} at {thread.created_at}</span>
-                    </li>))}
-            </ul>
-        </div>);
+        <h1>Forum</h1>
+        <Link to="/forum/new-thread" className="btn btn-primary">New Thread</Link>
+        <ul className="list-group mt-3">
+            {Array.isArray(threads) && threads.length > 0 ? (
+                threads.map(thread => (
+                    thread && thread.id && thread.title ? (
+                        <li key={thread.id} className="list-group-item">
+                            {typeof thread.id === "number" && thread.id > 0 ? (
+                                <Link to={`/forum/thread/${thread.id}`}>{thread.title}</Link>
+                            ) : (
+                                <span>{thread.title} (Invalid ID)</span>
+                            )}
+                            <span className="text-muted"> by {thread.username} at {thread.created_at}</span>
+                        </li>
+                    ) : null // Skip invalid thread objects
+                ))
+            ) : (
+                <p className="text-muted">No threads available.</p>
+            )}
+        </ul>
+    </div>);
 }
 
 export default Forum;
