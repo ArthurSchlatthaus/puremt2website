@@ -13,8 +13,6 @@ function NewThread() {
 
         try {
             const response = await apiClient.post("/forum/create_thread.php", {title}, {headers: {Authorization: `Bearer ${token}`}});
-
-            console.log(response)
             setMessage({type: "success", text: response.data.message});
             setTimeout(() => navigate("/forum"), 2000);
         } catch (error) {
