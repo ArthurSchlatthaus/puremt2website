@@ -103,7 +103,7 @@ function Register() {
 
             <div className="mb-3">
                 <ReCAPTCHA
-                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                    sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
                     onChange={setRecaptchaToken}
                 />
             </div>
