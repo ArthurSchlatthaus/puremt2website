@@ -23,8 +23,7 @@ function Dashboard() {
             setUser(decoded);
 
             apiClient.get("/forum/get_threads.php", {
-                params: {user_id: decoded.id},
-                headers: {Authorization: `Bearer ${token}`}
+                params: {user_id: decoded.id}, headers: {Authorization: `Bearer ${token}`}
             })
                 .then(response => {
                     setThreads(response.data.threads || []);
@@ -43,15 +42,10 @@ function Dashboard() {
         }
     }, [navigate]);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
-    };
-
-    if (loading) return <div className="container text-center"><h2>Loading...</h2></div>;
+    if (loading) return <div className="container container-dark text-center"><h2>Loading...</h2></div>;
 
     return (
-        <div className="container text-center">
+        <div className="container container-dark text-center">
             <h1>Welcome, {user?.username}!</h1>
             <br/>
             <h2>Your Threads</h2>
@@ -61,13 +55,29 @@ function Dashboard() {
             ) : (
                 <ul className="list-group">
                     {threads.map(thread => (
-                        <li key={thread.id} className="list-group-item">
+                        <li key={thread.id} className="list-group-item text-white">
                             {typeof thread.id === "number" && thread.id > 0 ? (
                                 <Link to={`/forum/thread/${thread.id}`}>{thread.title}</Link>
                             ) : (
                                 <span>{thread.title} (Invalid ID)</span>
                             )}
-                            <span className="text-muted"> by {thread.username} at {thread.created_at}</span>
+                            <span> by {thread.username} at {thread.created_at}</span>
+                            <div>
+                                {thread.categories && Array.isArray(thread.categories) && thread.categories.length > 0 ? (
+                                    thread.categories.map(category => (
+                                        <span key={category.id} style={{
+                                            backgroundColor: category.color,
+                                            padding: "5px",
+                                            margin: "5px",
+                                            borderRadius: "4px"
+                                        }}>
+                                        {category.name}
+                                    </span>
+                                    ))
+                                ) : (
+                                    <span> No Categories</span>
+                                )}
+                            </div>
                         </li>
                     ))}
                 </ul>

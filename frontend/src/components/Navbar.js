@@ -35,9 +35,9 @@ function Navbar() {
         navigate("/");
     };
 
-    return (<nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+    return (<nav className="navbar navbar-expand-lg container-dark">
         <div className="container">
-            <a className="navbar-brand" href="/" onClick={handleLogoClick}>
+            <a className="navbar-brand text-white" href="/" onClick={handleLogoClick}>
                 PureMt2
             </a>
             {/* Burger menu button */}
@@ -56,24 +56,31 @@ function Navbar() {
             <div className="collapse navbar-collapse" id="navbarNav">
                 <ul className="navbar-nav ms-auto">
                     <li className="nav-item">
-                        <Link className="nav-link" to="/forum">
+                        <Link className="nav-link text-white" to="/forum">
                             Forum
                         </Link>
                     </li>
-                    {user && user.is_admin && (<li className="nav-item">
-                        <Link className="nav-link" to="/admin">
-                            Admin
-                        </Link>
-                    </li>)}
+
+                    <Link to="/downloads" className="nav-link text-white">Downloads</Link>
+
+                    {user && user.is_admin === 1 && (
+                        <li className="nav-item">
+                            <Link className="nav-link text-white" to="/admin">
+                                Admin
+                            </Link>
+                        </li>
+                    )}
+
                     {user ? (<li className="nav-item">
-                        <button className="btn btn-danger nav-link" onClick={handleLogout}>
+                        <button className="btn btn-danger nav-link text-white" onClick={handleLogout}>
                             Logout
                         </button>
                     </li>) : (<li className="nav-item">
-                        <Link className="nav-link" to="/">
+                        <Link className="nav-link text-white" to="/">
                             Login
                         </Link>
                     </li>)}
+
                 </ul>
             </div>
         </div>

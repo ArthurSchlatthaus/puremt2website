@@ -6,7 +6,7 @@ function Home() {
   const [showRegister, setShowRegister] = useState(false);
 
   return (
-      <div className="container text-center mt-5">
+      <div className="container container-dark text-center mt-5">
           <h1 className="mb-4">Welcome to PureMt2</h1>
           <div className="btn-group mb-4">
               <button className={`btn ${!showRegister ? "btn-primary" : "btn-outline-primary"}`}

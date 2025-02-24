@@ -1,0 +1,9 @@
+- add categories
+- add edit and delete function for user and admin for thread and post
+- add user avatar selection (no upload)
+- add download area for client and patcher
+
+- remove users and create a connection to live DB
+- add user-area with change pass, pin, email and unstuck char
+- add forget password by email
+- add crypto

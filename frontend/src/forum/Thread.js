@@ -66,6 +66,7 @@ function Thread() {
             setTimeout(() => setClearEditor(false), 100);
         } catch (error) {
             if (error.response?.status === 401) {
+                console.error("Invalid token:", error);
                 localStorage.removeItem("token");
                 window.location.href = "/";
             } else if (error.response?.status === 429) {
@@ -82,23 +83,38 @@ function Thread() {
         return txt.value;
     }
 
-    return (<div className="container mt-4">
+    return (<div className="container container-dark mt-4">
         <h2 className="mb-4">
             {thread ? thread.title : "Loading..."}
         </h2>
-        <h5 className="text-muted">
+        <h5>
             Posted
             by {thread ? thread.username : "Unknown"} on {thread ? new Date(thread.created_at).toLocaleString() : ""}
         </h5>
-
+        <h5>Categories:
+            {thread && thread.categories && thread.categories.length > 0 ? (
+                thread.categories.map((category) => (
+                    <span key={category.id} style={{
+                        backgroundColor: category.color,
+                        padding: "5px",
+                        marginLeft: "5px",
+                        borderRadius: "4px"
+                    }}>
+                {category.name}
+            </span>
+                ))
+            ) : (
+                " None"
+            )}
+        </h5>
         <div className="list-group mb-4">
-            {posts.length === 0 ? (<p className="text-muted">No replies yet.</p>) : (posts.map((post, index) => (
+            {posts.length === 0 ? (<p>No replies yet.</p>) : (posts.map((post, index) => (
                 <div key={index} className="card mb-3">
                     <div className="card-body">
                         <h5 className="card-title">
                             {user && user.username === post.username ? "You" : post.username}
                         </h5>
-                        <h6 className="card-subtitle mb-2 text-muted">{new Date(post.created_at).toLocaleString()}</h6>
+                        <h6 className="card-subtitle mb-2">{new Date(post.created_at).toLocaleString()}</h6>
                         <p className="card-text"
                            dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(unescapeHTML(post.content))}}/>
                     </div>
@@ -107,11 +123,11 @@ function Thread() {
 
         {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
 
-        {thread && thread.is_admin && user.is_admin === 0 ? (
-            <p className="text-muted">Replies are disabled for admin threads.</p>) : (<form onSubmit={handleSubmit}>
-            <Editor value={content} onChange={setContent} clearContent={clearEditor}/>
-            <button type="submit" className="btn btn-primary mt-3">Reply</button>
-        </form>)}
+        {thread && thread.is_admin && user.is_admin === 0 ? (<p>Replies are disabled for admin threads.</p>) : (
+            <form onSubmit={handleSubmit}>
+                <Editor value={content} onChange={setContent} clearContent={clearEditor}/>
+                <button type="submit" className="btn btn-primary mt-3">Reply</button>
+            </form>)}
 
     </div>);
 }

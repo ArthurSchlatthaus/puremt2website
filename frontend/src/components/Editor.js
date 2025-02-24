@@ -2,11 +2,16 @@ import React, {useEffect} from "react";
 import {EditorContent, useEditor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import "../styles/Editor.css";
 
 const Editor = ({value, onChange, clearContent}) => {
     const editor = useEditor({
-        extensions: [StarterKit, Image], content: value, autofocus: true, editable: true, onUpdate: ({editor}) => {
+        extensions: [StarterKit, Image],
+        content: value,
+        autofocus: true,
+        editable: true,
+        onUpdate: ({editor}) => {
             onChange(editor.getHTML());
         },
     });
@@ -78,16 +83,6 @@ const Editor = ({value, onChange, clearContent}) => {
                 onClick={handleButtonClick(addImage)}
             >
                 🖼 Image
-            </button>
-            <button
-                type="button"
-                className="toolbar-btn"
-                onClick={handleButtonClick(() => {
-                    const url = prompt("Enter link URL");
-                    if (url) editor.chain().focus().extendMarkRange("link").setLink({href: url}).run();
-                })}
-            >
-                🔗 Link
             </button>
         </div>
         <EditorContent editor={editor} className="editor-content"/>

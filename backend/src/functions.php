@@ -19,7 +19,15 @@ function get_json_input()
 function send_json_response($status, $message = null, $data = [])
 {
     http_response_code($status);
-    echo json_encode(array_merge(["error" => $message], $data));
+    $response_key = ($status >= 400) ? "error" : "message";
+
+    $response = [$response_key => $message];
+
+    if (!empty($data)) {
+        $response['data'] = $data;
+    }
+
+    echo json_encode($response);
     exit();
 }
 
@@ -74,25 +82,33 @@ function insert_user($conn, $username, $password)
 
 function fetch_threads($conn, $user_id = null)
 {
-    $query = "SELECT t.id, t.title, t.created_at, u.username
-FROM forum_threads t
-JOIN users u ON t.user_id = u.id
-WHERE u.is_active = 1";
+    $query = "SELECT t.id, t.title, t.created_at, u.username, 
+                 IFNULL(GROUP_CONCAT(DISTINCT JSON_OBJECT('id', c.id, 'name', c.name, 'color', c.color) ORDER BY c.name SEPARATOR ','), '[]') AS categories
+          FROM forum_threads t
+          JOIN users u ON t.user_id = u.id
+          LEFT JOIN thread_categories tc ON t.id = tc.thread_id
+          LEFT JOIN categories c ON tc.category_id = c.id
+          WHERE u.is_active = 1";
 
     if ($user_id) {
         $query .= " AND t.user_id = ?";
     }
 
-    $query .= " ORDER BY t.created_at DESC";
+    $query .= " GROUP BY t.id ORDER BY t.created_at DESC";
 
     $stmt = $conn->prepare($query);
     if ($user_id) {
         $stmt->bind_param("i", $user_id);
     }
     $stmt->execute();
-    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-}
+    $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+    foreach ($result as &$thread) {
+        $thread['categories'] = json_decode("[" . $thread['categories'] . "]", true);
+    }
+
+    return $result;
+}
 function fetch_posts_for_thread($conn, $thread_id)
 {
     $stmt = $conn->prepare("SELECT p.id, p.content, p.created_at, u.username

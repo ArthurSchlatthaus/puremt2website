@@ -24,6 +24,15 @@ if (!$thread) {
     send_json_response(404, "Thread not found");
 }
 
+$categoryQuery = $conn->prepare("SELECT c.id, c.name, c.color 
+                                 FROM thread_categories tc
+                                 JOIN categories c ON tc.category_id = c.id
+                                 WHERE tc.thread_id = ?");
+$categoryQuery->bind_param("i", $thread_id);
+$categoryQuery->execute();
+$categories = $categoryQuery->get_result()->fetch_all(MYSQLI_ASSOC);
+
+$thread['categories'] = $categories;
 $posts = fetch_posts_for_thread($conn, $thread_id);
 
 echo json_encode(["thread" => $thread, "posts" => $posts]);

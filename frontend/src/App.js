@@ -10,6 +10,10 @@ import Forum from "./forum/Forum";
 import Thread from "./forum/Thread";
 import NewThread from "./forum/NewThread";
 import AdminDashboard from "./admin/AdminDashboard";
+import AdminCategories from "./admin/AdminCategories";
+import Downloads from "./pages/Downloads";
+import "./styles/Global.css";
+
 
 function App() {
     return (<Router>
@@ -19,6 +23,7 @@ function App() {
                 <Route path="/" element={<Home/>}/>
                 <Route path="/login" element={<Login/>}/>
                 <Route path="/register" element={<Register/>}/>
+                <Route path="/downloads" element={<Downloads />} />
                 <Route
                     path="/dashboard"
                     element={<ProtectedRoute>
@@ -47,6 +52,12 @@ function App() {
                     path="/admin"
                     element={<ProtectedRoute>
                         <AdminDashboard/>
+                    </ProtectedRoute>}
+                />
+                <Route
+                    path="/admin/categories"
+                    element={<ProtectedRoute>
+                        <AdminCategories/>
                     </ProtectedRoute>}
                 />
             </Routes>
