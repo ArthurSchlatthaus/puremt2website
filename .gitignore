@@ -1,6 +1,6 @@
 # Ignore dependencies
-/vendor
-/node_modules
+/backend/vendor
+/frontend/node_modules
 composer.lock
 package-lock.json
 yarn.lock
